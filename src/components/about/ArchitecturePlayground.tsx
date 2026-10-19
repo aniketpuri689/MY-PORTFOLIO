@@ -164,9 +164,7 @@ const outcome = await agent.runLoopUntilGoalVerified(missionContext);`,
       if (Math.abs(diff) > 0.001) {
         const nextVal = current + diff * 0.12;
         displayProgressRef.current = nextVal;
-        if (Math.round(nextVal * 100) !== Math.round(current * 100)) {
-          setDisplayProgress(nextVal);
-        }
+        setDisplayProgress(nextVal);
       }
 
       rafIdRef.current = requestAnimationFrame(updateProgressLoop);

@@ -18,41 +18,31 @@ export const HUDOverlay: React.FC = () => {
   useEffect(() => {
     const sectionIds = ["core", "identity", "capabilities", "laboratory", "beyond", "communicate"];
 
-    let rafId: number | null = null;
-
     const onScroll = () => {
-      if (rafId !== null) return;
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        const scrollY = window.scrollY;
-        const windowHeight = window.innerHeight;
-        const docHeight = document.documentElement.scrollHeight;
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const docHeight = document.documentElement.scrollHeight;
 
-        // Bottom of page -> highlight communicate
-        if (scrollY + windowHeight >= docHeight - 80) {
-          setActiveTab((prev) => (prev !== "communicate" ? "communicate" : prev));
-          return;
-        }
+      // Bottom of page -> highlight communicate
+      if (scrollY + windowHeight >= docHeight - 80) {
+        setActiveTab("communicate");
+        return;
+      }
 
-        // Find which section is currently active
-        const viewportMid = scrollY + windowHeight * 0.35;
-        for (let i = sectionIds.length - 1; i >= 0; i--) {
-          const el = document.getElementById(sectionIds[i]);
-          if (el && el.offsetTop <= viewportMid) {
-            const nextTab = sectionIds[i];
-            setActiveTab((prev) => (prev !== nextTab ? nextTab : prev));
-            break;
-          }
+      // Find which section is currently active
+      const viewportMid = scrollY + windowHeight * 0.35;
+      for (let i = sectionIds.length - 1; i >= 0; i--) {
+        const el = document.getElementById(sectionIds[i]);
+        if (el && el.offsetTop <= viewportMid) {
+          setActiveTab(sectionIds[i]);
+          break;
         }
-      });
+      }
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll(); // Run initially
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (rafId !== null) cancelAnimationFrame(rafId);
-    };
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string, href: string) => {

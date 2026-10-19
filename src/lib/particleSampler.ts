@@ -1,9 +1,9 @@
 /**
  * PARTICLE SAMPLER & CYBERNETIC MESH ENGINE
  * 
- * Provides instantaneous procedural cybernetic face targets at Frame 0 (0ms latency),
- * and safely samples authentic photographic coordinates from /images/profile-face.jpg.
- * Guarantees that the orbs ALWAYS render immediately on any device, network, or browser.
+ * Extracts high-contrast facial coordinates from /images/profile-face.jpg.
+ * Preserves authentic photographic colors and maps strictly within the photo boundaries.
+ * Includes resilient fallback targets to guarantee the animation always loads on all devices.
  */
 
 export interface ParticleTarget {
@@ -19,178 +19,29 @@ export interface ParticleTarget {
 }
 
 /**
- * Procedurally generates a futuristic 3D cybernetic face and neural orb constellation.
- * Executes synchronously in < 1ms with 0 network dependencies so particles render instantly.
+ * Procedural fallback targets in case image loading fails or network times out.
  */
-export function generateProceduralFaceTargets(count: number = 3600): ParticleTarget[] {
+function getFallbackTargets(maxParticles: number): ParticleTarget[] {
   const targets: ParticleTarget[] = [];
+  const count = Math.min(maxParticles, 4000);
 
-  // Helper to add a target
-  const add = (
-    x: number,
-    y: number,
-    brightness: number,
-    r: number,
-    g: number,
-    b: number,
-    isCircuit = false,
-    isKeyPoint = false
-  ) => {
-    targets.push({
-      x: Math.max(-0.48, Math.min(0.48, x)),
-      y: Math.max(-0.48, Math.min(0.48, y)),
-      brightness,
-      r,
-      g,
-      b,
-      isCircuit,
-      isKeyPoint
-    });
-  };
-
-  // 1. Jawline & Chin Contour (smooth oval jaw curve)
-  const jawCount = Math.floor(count * 0.12);
-  for (let i = 0; i < jawCount; i++) {
-    const t = (i / (jawCount - 1)) * Math.PI - Math.PI / 2; // -PI/2 to PI/2
-    const jawWidth = 0.26 + Math.cos(t) * 0.04;
-    const x = Math.sin(t) * jawWidth;
-    const y = 0.04 + Math.abs(Math.sin(t)) * 0.12 + Math.cos(t) * 0.18;
-    const isCircuit = i % 4 === 0;
-    add(
-      x + (Math.random() - 0.5) * 0.012,
-      y + (Math.random() - 0.5) * 0.012,
-      0.85,
-      isCircuit ? 0 : 210,
-      isCircuit ? 240 : 225,
-      255,
-      isCircuit,
-      true
-    );
-  }
-
-  // 2. Head & Forehead Crown Arch
-  const crownCount = Math.floor(count * 0.10);
-  for (let i = 0; i < crownCount; i++) {
-    const angle = Math.PI + (i / (crownCount - 1)) * Math.PI; // PI to 2PI
-    const radX = 0.28 + (Math.random() - 0.5) * 0.02;
-    const radY = 0.30 + (Math.random() - 0.5) * 0.02;
-    const x = Math.cos(angle) * radX;
-    const y = -0.06 + Math.sin(angle) * radY;
-    const isCircuit = Math.random() < 0.25;
-    add(x, y, 0.75, isCircuit ? 0 : 190, isCircuit ? 240 : 210, 255, isCircuit);
-  }
-
-  // 3. Left & Right Eye Sockets, Irises & Eyebrows
-  const eyeCount = Math.floor(count * 0.14);
-  for (let i = 0; i < eyeCount; i++) {
-    const isLeft = i % 2 === 0;
-    const eyeCenterX = isLeft ? -0.12 : 0.12;
-    const eyeCenterY = -0.06;
-
-    // Eyebrows (upper arch)
-    if (i < eyeCount * 0.4) {
-      const archT = (i / (eyeCount * 0.4) - 0.5) * 2; // -1 to 1
-      const browX = eyeCenterX + archT * 0.08;
-      const browY = eyeCenterY - 0.07 - (1 - archT * archT) * 0.025;
-      add(browX, browY, 0.95, 0, 240, 255, true, true);
-    } else {
-      // Eye Ellipse & Pupil
-      const angle = Math.random() * Math.PI * 2;
-      const r = Math.random() < 0.3 ? Math.random() * 0.02 : 0.02 + Math.random() * 0.035;
-      const x = eyeCenterX + Math.cos(angle) * r * 1.35;
-      const y = eyeCenterY + Math.sin(angle) * r * 0.75;
-      const isIris = r < 0.022;
-      add(
-        x,
-        y,
-        isIris ? 1.0 : 0.85,
-        isIris ? 0 : 170,
-        isIris ? 240 : 210,
-        255,
-        isIris,
-        isIris
-      );
-    }
-  }
-
-  // 4. Nose Bridge & Nostril Flare
-  const noseCount = Math.floor(count * 0.08);
-  for (let i = 0; i < noseCount; i++) {
-    const t = i / noseCount; // 0 to 1
-    const y = -0.06 + t * 0.15;
-    const spread = t > 0.75 ? (t - 0.75) * 0.18 : 0.015;
-    const x = (Math.random() - 0.5) * spread;
-    const isCircuit = i % 3 === 0;
-    add(x, y, 0.9, isCircuit ? 0 : 220, isCircuit ? 240 : 220, 255, isCircuit);
-  }
-
-  // 5. Mouth & Lip Curves
-  const mouthCount = Math.floor(count * 0.09);
-  for (let i = 0; i < mouthCount; i++) {
-    const t = (i / mouthCount - 0.5) * 2; // -1 to 1
-    const x = t * 0.10;
-    // Upper lip curve
-    const upperY = 0.15 - Math.abs(x) * 0.15;
-    // Lower lip curve
-    const lowerY = 0.17 + (1 - t * t) * 0.025;
-    const isUpper = Math.random() < 0.5;
-    add(
-      x + (Math.random() - 0.5) * 0.008,
-      (isUpper ? upperY : lowerY) + (Math.random() - 0.5) * 0.006,
-      0.85,
-      0,
-      230,
-      255,
-      i % 5 === 0
-    );
-  }
-
-  // 6. Cybernetic Circuit Traces & Forehead Matrix
-  const circuitCount = Math.floor(count * 0.16);
-  for (let i = 0; i < circuitCount; i++) {
-    // Radiating vertical & diagonal circuit lines
-    const branch = i % 5;
-    let x = 0;
-    let y = 0;
-    if (branch === 0) {
-      // Center forehead vertical trace
-      x = (Math.random() - 0.5) * 0.02;
-      y = -0.10 - Math.random() * 0.22;
-    } else if (branch === 1 || branch === 2) {
-      // Left / Right temple circuit lines
-      const sign = branch === 1 ? -1 : 1;
-      const progress = Math.random();
-      x = sign * (0.16 + progress * 0.15);
-      y = -0.08 - progress * 0.16;
-    } else {
-      // Cheek data buses
-      const sign = branch === 3 ? -1 : 1;
-      const progress = Math.random();
-      x = sign * (0.10 + progress * 0.14);
-      y = 0.02 + progress * 0.16;
-    }
-    add(x, y, 1.0, 0, 240, 255, true, Math.random() < 0.2);
-  }
-
-  // 7. Volumetric Facial Fill & Ambient Orbital Orbs
-  const fillCount = count - targets.length;
-  for (let i = 0; i < fillCount; i++) {
-    // Fill within facial oval
+  for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
     const r = Math.sqrt(Math.random());
-    const x = Math.cos(angle) * r * 0.24;
-    const y = 0.02 + Math.sin(angle) * r * 0.32;
-    const brightness = 0.3 + Math.random() * 0.6;
-    const isCyan = Math.random() < 0.35;
-    add(
-      x,
-      y,
-      brightness,
-      isCyan ? 0 : 200,
-      isCyan ? 230 : 210,
-      isCyan ? 255 : 230,
-      isCyan && Math.random() < 0.2
-    );
+    const normX = Math.cos(angle) * r * 0.28;
+    const normY = (Math.sin(angle) * r * 0.38) + 0.02;
+    const isCircuit = i % 8 === 0;
+
+    targets.push({
+      x: normX,
+      y: normY,
+      brightness: isCircuit ? 1.0 : 0.5 + Math.random() * 0.4,
+      r: isCircuit ? 0 : 200,
+      g: isCircuit ? 240 : 210,
+      b: isCircuit ? 255 : 220,
+      isCircuit,
+      isKeyPoint: isCircuit
+    });
   }
 
   return targets;
@@ -198,25 +49,25 @@ export function generateProceduralFaceTargets(count: number = 3600): ParticleTar
 
 /**
  * Loads /images/profile-face.jpg, samples luminance, natural skin tones, and circuit lines.
- * Strictly resolves within a safety timeout and avoids CORS issues for local assets.
+ * Strictly filters out background noise so all particles sit directly within the subject.
  */
 export async function sampleImageParticles(
   imageSrc: string = "/images/profile-face.jpg",
-  maxParticles: number = 6000
+  maxParticles: number = 8000
 ): Promise<ParticleTarget[]> {
   return new Promise((resolve) => {
     let resolved = false;
 
-    // Timeout safety: if image takes > 1200ms on cellular/slow device, resolve with procedural targets
+    // Safety timeout: if image takes > 2500ms on cellular/slow device, resolve fallback
     const timeout = setTimeout(() => {
       if (!resolved) {
         resolved = true;
-        resolve(generateProceduralFaceTargets(maxParticles));
+        resolve(getFallbackTargets(maxParticles));
       }
-    }, 1200);
+    }, 2500);
 
     const img = new Image();
-    // Do NOT set crossOrigin = "anonymous" for local relative path to avoid Safari CORS rejection
+    // Do NOT set crossOrigin = "anonymous" to prevent iOS/Android CORS blocking on local assets
     img.src = imageSrc;
 
     img.onload = () => {
@@ -228,12 +79,12 @@ export async function sampleImageParticles(
         const offscreen = document.createElement("canvas");
         const ctx = offscreen.getContext("2d");
         if (!ctx) {
-          resolve(generateProceduralFaceTargets(maxParticles));
+          resolve(getFallbackTargets(maxParticles));
           return;
         }
 
-        const sampleW = 160;
-        const sampleH = 160;
+        const sampleW = 200;
+        const sampleH = 200; // 1:1 square
         offscreen.width = sampleW;
         offscreen.height = sampleH;
 
@@ -263,12 +114,13 @@ export async function sampleImageParticles(
             const normY = (y + 0.5) / sampleH - 0.5;
 
             // Reject pure black background (keep pixels belonging to subject)
+            // Reject outer corners (beyond subject perimeter)
             const distFromCenter = Math.hypot(normX, normY);
             if (distFromCenter > 0.48) continue;
 
             if (luminance > 0.10 || isCircuit) {
               const prob = isCircuit
-                ? 1.0
+                ? 1.0 // always keep circuit traces
                 : Math.min(1.0, luminance * luminance * 2.2 + 0.08);
 
               if (Math.random() < prob) {
@@ -293,14 +145,14 @@ export async function sampleImageParticles(
             [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
           }
           resolve(candidates.slice(0, maxParticles));
-        } else if (candidates.length > 200) {
+        } else if (candidates.length > 50) {
           resolve(candidates);
         } else {
-          resolve(generateProceduralFaceTargets(maxParticles));
+          resolve(getFallbackTargets(maxParticles));
         }
       } catch (err) {
-        console.warn("Falling back to procedural particle targets:", err);
-        resolve(generateProceduralFaceTargets(maxParticles));
+        console.warn("Error sampling image particles, using fallback:", err);
+        resolve(getFallbackTargets(maxParticles));
       }
     };
 
@@ -308,7 +160,7 @@ export async function sampleImageParticles(
       if (resolved) return;
       clearTimeout(timeout);
       resolved = true;
-      resolve(generateProceduralFaceTargets(maxParticles));
+      resolve(getFallbackTargets(maxParticles));
     };
   });
 }

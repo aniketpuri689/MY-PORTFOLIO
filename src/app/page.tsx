@@ -1,15 +1,30 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { HUDOverlay } from "@/components/ui/HUDOverlay";
 import { CustomCursor } from "@/components/ui/CustomCursor";
 import { AmbientCanvas } from "@/components/ui/AmbientCanvas";
 import { AniketCLI } from "@/components/ui/AniketCLI";
-import { ThunderFace } from "@/components/hero/ThunderFace";
 import { AboutSection } from "@/components/about/AboutSection";
 import { CapabilitiesSection } from "@/components/capabilities/CapabilitiesSection";
 import { ProjectsSection } from "@/components/projects/ProjectsSection";
 import { BeyondSection } from "@/components/beyond/BeyondSection";
 import { ContactSection } from "@/components/contact/ContactSection";
+
+// Dynamically import ThunderFace to guarantee client-side canvas and GSAP execution
+const ThunderFace = dynamic(() => import("@/components/hero/ThunderFace"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-screen bg-[#030303] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-mono text-cyan-400 tracking-widest uppercase">
+          INITIALIZING NEURAL ENGINE...
+        </span>
+      </div>
+    </div>
+  ),
+});
 
 export default function Home() {
   return (

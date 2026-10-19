@@ -1,9 +1,15 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { FaceCanvas } from "./FaceCanvas";
 import { HeroTelemetry } from "./HeroTelemetry";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 interface ThunderFaceProps {
   className?: string;
@@ -17,48 +23,34 @@ export const ThunderFace: React.FC<ThunderFaceProps> = ({ className = "" }) => {
 
   useEffect(() => {
     if (reducedMotion || typeof window === "undefined") {
-      progressRef.current = 0.5;
+      progressRef.current = 0.85;
       return;
     }
 
     const container = containerRef.current;
-    if (!container) return;
+    const pinWrapper = pinWrapperRef.current;
+    if (!container || !pinWrapper) return;
 
-    let rafId: number | null = null;
+    // Set initial progress
+    progressRef.current = 0;
 
-    // High-performance hardware-accelerated scroll calculation (works 100% reliably on all mobile & desktop browsers)
-    const handleScroll = () => {
-      if (rafId !== null) return;
-
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        if (!container) return;
-
-        const rect = container.getBoundingClientRect();
-        const viewportH = window.innerHeight;
-        const totalDistance = rect.height - viewportH;
-
-        if (totalDistance <= 0) {
-          progressRef.current = 0;
-          return;
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: container,
+        start: "top top",
+        end: "bottom bottom",
+        pin: pinWrapper,
+        pinSpacing: false,
+        scrub: 0.35, // Fast, responsive scrub
+        anticipatePin: 1,
+        onUpdate: (self) => {
+          progressRef.current = self.progress;
         }
-
-        const scrolled = -rect.top;
-        const progress = Math.max(0, Math.min(1, scrolled / totalDistance));
-        progressRef.current = progress;
       });
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("resize", handleScroll, { passive: true });
-    handleScroll();
+    }, container);
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", handleScroll);
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
+      ctx.revert(); // Automatically cleans up ScrollTrigger and listeners
     };
   }, [reducedMotion]);
 
@@ -67,15 +59,15 @@ export const ThunderFace: React.FC<ThunderFaceProps> = ({ className = "" }) => {
       ref={containerRef}
       id="core"
       className={`relative w-full ${
-        reducedMotion ? "h-screen" : "h-[175vh] sm:h-[220vh]"
+        reducedMotion ? "h-screen" : "h-[220vh]"
       } bg-[#030303] text-white ${className}`}
     >
-      {/* Sticky Pinned Viewport Container (GPU native sticky, safe on iOS dynamic address bars) */}
+      {/* Sticky Pinned Viewport Container */}
       <div
         ref={pinWrapperRef}
-        className="sticky top-0 w-full h-screen h-[100dvh] overflow-hidden flex items-center justify-center bg-[#030303] will-change-transform"
+        className="sticky top-0 w-full h-screen overflow-hidden flex items-center justify-center bg-[#030303]"
       >
-        {/* Procedural Canvas Simulation (Particles + Organic Idle Float + Tactile Touch) */}
+        {/* Procedural Canvas Simulation (Particles + Organic Lightning) */}
         <FaceCanvas progressRef={progressRef} reducedMotion={reducedMotion} />
 
         {/* Minimalist Futuristic Typography & HUD Telemetry */}

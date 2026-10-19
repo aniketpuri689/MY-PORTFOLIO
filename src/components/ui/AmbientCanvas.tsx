@@ -16,14 +16,13 @@ export const AmbientCanvas: React.FC = () => {
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
-    let animId: number = 0;
+    let animId: number;
     let width = 0;
     let height = 0;
     let isDestroyed = false;
-    let isVisible = true;
 
     const isMobile = window.innerWidth < 768;
-    const orbCount = isMobile ? 16 : 32;
+    const orbCount = isMobile ? 22 : 45;
 
     interface AmbientOrb {
       x: number;
@@ -59,39 +58,25 @@ export const AmbientCanvas: React.FC = () => {
       orbs.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        size: 1.2 + Math.random() * 2.0,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        size: 1.2 + Math.random() * 2.2,
         color,
-        baseAlpha: 0.15 + Math.random() * 0.3,
+        baseAlpha: 0.15 + Math.random() * 0.35,
         pulsePhase: Math.random() * Math.PI * 2
       });
     }
 
     let lastTime = performance.now();
 
-    // Pause when tab is hidden
-    const handleVisibility = () => {
-      isVisible = document.visibilityState === "visible";
-      if (isVisible && !animId && !isDestroyed) {
-        lastTime = performance.now();
-        animId = requestAnimationFrame(render);
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibility);
-
     const render = (time: number) => {
-      if (!isVisible) {
-        animId = 0;
-        return;
-      }
-
-      const dt = Math.min((time - lastTime) / 1000, 0.08);
+      const dt = Math.min((time - lastTime) / 1000, 0.1);
       lastTime = time;
 
       ctx.clearRect(0, 0, width, height);
 
-      const maxDist = isMobile ? 65 : 100;
+      // Subtle dynamic filaments connecting nearby orbs
+      const maxDist = isMobile ? 80 : 120;
       const maxDistSq = maxDist * maxDist;
 
       for (let i = 0; i < orbs.length; i++) {
@@ -107,7 +92,7 @@ export const AmbientCanvas: React.FC = () => {
         else if (o.y > height + 10) o.y = -10;
 
         const pulse = Math.sin(time * 0.0015 + o.pulsePhase);
-        const alpha = Math.max(0.05, o.baseAlpha + pulse * 0.1);
+        const alpha = Math.max(0.05, o.baseAlpha + pulse * 0.12);
 
         // Draw Orb
         ctx.beginPath();
@@ -115,7 +100,13 @@ export const AmbientCanvas: React.FC = () => {
         ctx.fillStyle = `${o.color} ${alpha})`;
         ctx.fill();
 
-        // Connect with nearby orbs (lightweight)
+        // Delicate outer glow
+        ctx.beginPath();
+        ctx.arc(o.x, o.y, o.size * 2.4, 0, Math.PI * 2);
+        ctx.fillStyle = `${o.color} ${alpha * 0.25})`;
+        ctx.fill();
+
+        // Connect with nearby orbs
         for (let j = i + 1; j < orbs.length; j++) {
           const o2 = orbs[j];
           const dx = o.x - o2.x;
@@ -123,12 +114,12 @@ export const AmbientCanvas: React.FC = () => {
           const distSq = dx * dx + dy * dy;
 
           if (distSq < maxDistSq) {
-            const lineAlpha = (1 - distSq / maxDistSq) * 0.08;
+            const lineAlpha = (1 - distSq / maxDistSq) * 0.09;
             ctx.beginPath();
             ctx.moveTo(o.x, o.y);
             ctx.lineTo(o2.x, o2.y);
             ctx.strokeStyle = `rgba(0, 240, 255, ${lineAlpha})`;
-            ctx.lineWidth = 0.5;
+            ctx.lineWidth = 0.6;
             ctx.stroke();
           }
         }
@@ -143,9 +134,8 @@ export const AmbientCanvas: React.FC = () => {
 
     return () => {
       isDestroyed = true;
-      document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("resize", handleResize);
-      if (animId) cancelAnimationFrame(animId);
+      cancelAnimationFrame(animId);
     };
   }, [reducedMotion]);
 
@@ -154,7 +144,7 @@ export const AmbientCanvas: React.FC = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0 opacity-40 select-none"
+      className="fixed inset-0 pointer-events-none z-0 opacity-45 select-none"
       aria-hidden="true"
     />
   );

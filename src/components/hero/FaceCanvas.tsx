@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import {
-  sampleImageParticles,
-  generateProceduralFaceTargets,
-  ParticleTarget
-} from "@/lib/particleSampler";
+import { sampleImageParticles, ParticleTarget } from "@/lib/particleSampler";
 
 interface FaceCanvasProps {
   progressRef: React.RefObject<number>;
@@ -13,12 +9,19 @@ interface FaceCanvasProps {
 }
 
 interface Particle {
+  // Current position
   x: number;
   y: number;
+  // Starting random void position
+  originX: number;
+  originY: number;
+  // Target face position (normalized [-0.5, 0.5])
   targetNormX: number;
   targetNormY: number;
+  // Disintegration explosion vectors
   explosionVx: number;
   explosionVy: number;
+  // Appearance
   baseSize: number;
   r: number;
   g: number;
@@ -28,6 +31,7 @@ interface Particle {
   isCircuit: boolean;
   driftSpeed: number;
   driftOffset: number;
+  // Interactive dynamic disturbance
   dispX: number;
   dispY: number;
 }
@@ -52,15 +56,13 @@ export const FaceCanvas: React.FC<FaceCanvasProps> = ({
     let isDestroyed = false;
     let isVisible = true;
 
+    // Pointer & Touch Interactive Forcefield
     const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-    const targetParticleCount = isMobile ? 1600 : 4200;
-
-    // Pointer & Touch Interactive Forcefield (active by default for organic feel)
     const pointer = {
       x: -9999,
       y: -9999,
       active: false,
-      radius: isMobile ? 90 : 140
+      radius: isMobile ? 85 : 135
     };
 
     const handlePointerMove = (e: PointerEvent) => {
@@ -89,13 +91,15 @@ export const FaceCanvas: React.FC<FaceCanvasProps> = ({
       pointer.y = -9999;
     };
 
-    let isAtmosphereBoosted =
-      typeof window !== "undefined" &&
-      !!(window as unknown as { __ATMOSPHERE_ACTIVE__?: boolean }).__ATMOSPHERE_ACTIVE__;
+    // Playable mode controlled by the Atmosphere button in top right
+    let isPlayable = typeof window !== "undefined" && !!(window as unknown as { __ATMOSPHERE_ACTIVE__?: boolean }).__ATMOSPHERE_ACTIVE__;
 
     const handleAtmosphereToggle = (e: Event) => {
       const customEvent = e as CustomEvent<{ active: boolean }>;
-      isAtmosphereBoosted = !!customEvent.detail?.active;
+      isPlayable = !!customEvent.detail?.active;
+      if (!isPlayable) {
+        pointer.active = false;
+      }
     };
 
     window.addEventListener("atmosphere-toggle", handleAtmosphereToggle);
@@ -104,81 +108,65 @@ export const FaceCanvas: React.FC<FaceCanvasProps> = ({
     window.addEventListener("touchmove", handleTouchMove, { passive: true });
     window.addEventListener("touchend", handleTouchEnd, { passive: true });
 
-    // Load actual user face image for faithful crossfade
+    // Load actual user face image for 100% faithful crossfade
     const faceImage = new Image();
     faceImage.src = "/images/profile-face.jpg";
     let isImageLoaded = false;
     faceImage.onload = () => {
       isImageLoaded = true;
     };
-    faceImage.onerror = () => {
-      isImageLoaded = false;
-    };
 
     let particles: Particle[] = [];
+    const targetParticleCount = isMobile ? 1800 : 5800;
 
     const initParticles = (targets: ParticleTarget[]) => {
+      particles = [];
       const count = Math.min(targets.length, targetParticleCount);
-      const newParticles: Particle[] = [];
 
       for (let i = 0; i < count; i++) {
         const pt = targets[i];
 
-        // Disintegration vectors radiating outwards
+        // Random starting positions spread in the outer void
+        const angle = Math.random() * Math.PI * 2;
+        const spreadDist = 0.65 + Math.random() * 1.1;
+        const originX = Math.cos(angle) * spreadDist;
+        const originY = Math.sin(angle) * spreadDist;
+
+        // Disintegration vectors
         const radAngle = Math.atan2(pt.y, pt.x) + (Math.random() - 0.5) * 0.7;
-        const blastSpeed = 650 + Math.random() * 950;
+        const blastSpeed = 650 + Math.random() * 900;
         const explosionVx = Math.cos(radAngle) * blastSpeed;
         const explosionVy = Math.sin(radAngle) * blastSpeed;
 
-        newParticles.push({
+        particles.push({
           x: 0,
           y: 0,
+          originX,
+          originY,
           targetNormX: pt.x,
           targetNormY: pt.y,
           explosionVx,
           explosionVy,
-          baseSize: pt.isCircuit ? 1.7 : 0.9 + pt.brightness * 1.1,
+          baseSize: pt.isCircuit ? 1.6 : 0.8 + pt.brightness * 1.1,
           r: pt.r,
           g: pt.g,
           b: pt.b,
-          alpha: pt.isCircuit ? 0.98 : 0.45 + pt.brightness * 0.55,
-          baseAlpha: pt.isCircuit ? 0.98 : 0.45 + pt.brightness * 0.55,
+          alpha: pt.isCircuit ? 0.95 : 0.25 + pt.brightness * 0.7,
+          baseAlpha: pt.isCircuit ? 0.95 : 0.25 + pt.brightness * 0.7,
           isCircuit: !!pt.isCircuit,
-          driftSpeed: 0.35 + Math.random() * 0.65,
+          driftSpeed: 0.3 + Math.random() * 0.6,
           driftOffset: Math.random() * Math.PI * 2,
           dispX: 0,
           dispY: 0
         });
       }
-
-      particles = newParticles;
     };
 
-    // 1. INSTANT ZERO-LATENCY FRAME-0 POPULATION:
-    // Guarantees orbs render immediately on any phone/laptop with 0 waiting!
-    initParticles(generateProceduralFaceTargets(targetParticleCount));
-
-    // 2. BACKGROUND PHOTO PIXEL SAMPLING:
-    // Enhances the coordinates with the exact photographic pixels when ready
+    // Sample directly from the user's uploaded portrait image
     sampleImageParticles("/images/profile-face.jpg", targetParticleCount).then(
       (loadedTargets) => {
-        if (!isDestroyed && loadedTargets && loadedTargets.length > 200) {
-          // Smoothly update particle targets with photo pixels
-          const updateCount = Math.min(particles.length, loadedTargets.length);
-          for (let i = 0; i < updateCount; i++) {
-            const pt = loadedTargets[i];
-            const p = particles[i];
-            p.targetNormX = pt.x;
-            p.targetNormY = pt.y;
-            p.r = pt.r;
-            p.g = pt.g;
-            p.b = pt.b;
-            p.isCircuit = !!pt.isCircuit;
-            if (pt.isCircuit) {
-              p.baseSize = 1.7;
-              p.baseAlpha = 0.98;
-            }
-          }
+        if (!isDestroyed && loadedTargets.length > 0) {
+          initParticles(loadedTargets);
         }
       }
     );
@@ -187,7 +175,7 @@ export const FaceCanvas: React.FC<FaceCanvasProps> = ({
       if (!canvas) return;
       width = window.innerWidth;
       height = window.innerHeight;
-      dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.4 : 2);
+      dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2);
 
       canvas.width = Math.floor(width * dpr);
       canvas.height = Math.floor(height * dpr);
@@ -200,12 +188,13 @@ export const FaceCanvas: React.FC<FaceCanvasProps> = ({
     window.addEventListener("resize", handleResize);
     handleResize();
 
+    // Smoothstep utility
     const smoothstep = (min: number, max: number, value: number) => {
       const x = Math.max(0, Math.min(1, (value - min) / (max - min)));
       return x * x * (3 - 2 * x);
     };
 
-    // Pause rendering loop when off-screen to preserve CPU/GPU battery
+    // Set up IntersectionObserver to pause rendering when scrolled offscreen
     const observer = new IntersectionObserver(
       ([entry]) => {
         isVisible = entry.isIntersecting;
@@ -217,7 +206,7 @@ export const FaceCanvas: React.FC<FaceCanvasProps> = ({
     );
     observer.observe(canvas);
 
-    // Main 60 FPS Render Loop
+    // Main 60 FPS Render Loop (Pure luminous orbs + faithful photo reveal + tactile forcefield)
     const render = (currentTime: number) => {
       if (!isVisible) {
         animationFrameId = 0;
@@ -225,7 +214,7 @@ export const FaceCanvas: React.FC<FaceCanvasProps> = ({
       }
 
       const rawProgress = progressRef.current ?? 0;
-      const progress = reducedMotion ? 0.75 : Math.max(0, Math.min(1, rawProgress));
+      const progress = reducedMotion ? 0.85 : Math.max(0, Math.min(1, rawProgress));
 
       // Clear Canvas to pure deep obsidian black
       ctx.fillStyle = "#030303";
@@ -234,20 +223,20 @@ export const FaceCanvas: React.FC<FaceCanvasProps> = ({
       const centerX = width * 0.5;
       const centerY = height * 0.5;
 
-      // Responsive portrait & orb bounding dimensions
-      const renderSize = Math.min(width * 0.78, height * 0.74);
+      // Unify photo & particle scale: EXACT 1:1 DIMENSIONS!
+      const renderSize = Math.min(width * 0.74, height * 0.74);
       const imgW = renderSize;
       const imgH = renderSize;
       const imgX = centerX - imgW * 0.5;
       const imgY = centerY - imgH * 0.5;
 
-      // Dynamic cinematic camera zoom on scroll
+      // Camera depth push-in during peak face state
       let cameraZoom = 1.0;
-      if (progress >= 0.70 && progress <= 0.88) {
-        const peakT = (progress - 0.70) / 0.18;
-        cameraZoom = 1.0 + Math.sin(peakT * Math.PI) * 0.05;
-      } else if (progress > 0.88) {
-        cameraZoom = 1.0 + (progress - 0.88) * 0.45;
+      if (progress >= 0.75 && progress <= 0.90) {
+        const peakT = (progress - 0.75) / 0.15;
+        cameraZoom = 1.0 + Math.sin(peakT * Math.PI) * 0.06;
+      } else if (progress > 0.90) {
+        cameraZoom = 1.0 + (progress - 0.90) * 0.5;
       }
 
       ctx.save();
@@ -255,28 +244,36 @@ export const FaceCanvas: React.FC<FaceCanvasProps> = ({
       ctx.scale(cameraZoom, cameraZoom);
       ctx.translate(-centerX, -centerY);
 
-      const isDisintegrating = progress > 0.88;
-      const disintegrationT = isDisintegrating ? (progress - 0.88) / 0.12 : 0;
+      // Fast initial convergence (0.05 to 0.38)
+      // When text begins fading in at ~0.40, convergenceFactor is ALREADY 1.0!
+      const convergenceFactor = smoothstep(0.05, 0.38, progress);
+      const isDisintegrating = progress > 0.90;
+      const disintegrationT = isDisintegrating ? (progress - 0.90) / 0.10 : 0;
 
       // =========================================================================
-      // 1. HIGH-DEFINITION PHOTO REVEAL (Smooth crossfade on scroll)
+      // 1. FAITHFUL HIGH-DEFINITION PHOTO REVEAL (Your Actual Real Face!)
+      // Fades in smoothly as orbs lock together so it is visibly 100% YOU!
       // =========================================================================
-      if (isImageLoaded && progress >= 0.22) {
+      if (isImageLoaded && progress >= 0.28) {
         let photoAlpha = 0;
-        if (progress >= 0.22 && progress < 0.40) {
-          photoAlpha = smoothstep(0.22, 0.40, progress) * 0.95;
-        } else if (progress >= 0.40 && progress <= 0.88) {
-          photoAlpha = 0.95;
+        if (progress >= 0.28 && progress < 0.44) {
+          // Smooth fade in as orbs assemble
+          photoAlpha = smoothstep(0.28, 0.44, progress) * 0.96;
+        } else if (progress >= 0.44 && progress <= 0.90) {
+          // Perfectly clear while the text is on screen!
+          photoAlpha = 0.96;
         } else if (isDisintegrating) {
-          photoAlpha = Math.max(0, 0.95 * (1.0 - disintegrationT * 1.6));
+          photoAlpha = Math.max(0, 0.96 * (1.0 - disintegrationT * 1.5));
         }
 
         if (photoAlpha > 0.01) {
           ctx.save();
           ctx.globalAlpha = photoAlpha;
+
+          // Draw the actual user portrait with exact dimensions
           ctx.drawImage(faceImage, imgX, imgY, imgW, imgH);
 
-          // Subtle circular edge feathering
+          // Subtle outer circular edge feathering (keeps full face/hair 100% clear)
           const maskGrad = ctx.createRadialGradient(
             centerX,
             centerY,
@@ -286,7 +283,7 @@ export const FaceCanvas: React.FC<FaceCanvasProps> = ({
             imgW * 0.50
           );
           maskGrad.addColorStop(0, "rgba(3, 3, 3, 0)");
-          maskGrad.addColorStop(0.65, "rgba(3, 3, 3, 0.35)");
+          maskGrad.addColorStop(0.6, "rgba(3, 3, 3, 0.35)");
           maskGrad.addColorStop(1, "rgba(3, 3, 3, 1)");
           ctx.fillStyle = maskGrad;
           ctx.fillRect(imgX - 5, imgY - 5, imgW + 10, imgH + 10);
@@ -296,45 +293,41 @@ export const FaceCanvas: React.FC<FaceCanvasProps> = ({
       }
 
       // =========================================================================
-      // 2. LUMINOUS PARTICLE ORBS & 3D NEURAL MESH (Visible at Progress 0!)
+      // 2. LUMINOUS PARTICLE ORBS (Mathematically mapped 1:1 onto the photo!)
       // =========================================================================
       const count = particles.length;
-      const timeSec = currentTime * 0.001;
 
       for (let i = 0; i < count; i++) {
         const p = particles[i];
 
-        // 1:1 Subpixel Mapping to Face Frame
+        // EXACT SUBPIXEL MAPPING TO PHOTO:
+        // p.targetNormX is [-0.5, 0.5] => (p.targetNormX + 0.5) is [0, 1] relative to photo
         const targetX = imgX + (p.targetNormX + 0.5) * imgW;
         const targetY = imgY + (p.targetNormY + 0.5) * imgH;
 
         let curX: number;
         let curY: number;
 
-        if (isDisintegrating) {
-          // Explosive sci-fi particle disintegration into next section
-          const tSq = disintegrationT * disintegrationT;
-          curX = targetX + p.explosionVx * tSq * 1.5;
-          curY = targetY + p.explosionVy * tSq * 1.5;
-        } else if (progress >= 0.35 && progress <= 0.88) {
-          // Precision lock over photo during reading phase
+        if (progress >= 0.38 && progress <= 0.90) {
+          // PERFECT LOCK: When text appears, all orbs fit precisely onto the photo!
           curX = targetX;
           curY = targetY;
+        } else if (isDisintegrating) {
+          const tSq = disintegrationT * disintegrationT;
+          curX = targetX + p.explosionVx * tSq * 1.4;
+          curY = targetY + p.explosionVy * tSq * 1.4;
         } else {
-          // ORGANIC IDLE BREATHING & CONVERGENCE (Visible immediately at frame 0!)
-          // Particles gently float and breathe in 3D space, converging smoothly on scroll
-          const idleFactor = 1.0 - smoothstep(0.0, 0.35, progress);
-          const breathX =
-            Math.sin(timeSec * p.driftSpeed + p.driftOffset) * (renderSize * 0.02) * idleFactor;
-          const breathY =
-            Math.cos(timeSec * p.driftSpeed * 0.8 + p.driftOffset) * (renderSize * 0.02) * idleFactor;
+          // Smooth convergence from outer void
+          const driftTime = currentTime * 0.001 * p.driftSpeed + p.driftOffset;
+          const driftX = centerX + (p.originX + Math.sin(driftTime) * 0.05) * renderSize;
+          const driftY = centerY + (p.originY + Math.cos(driftTime * 0.8) * 0.05) * renderSize;
 
-          curX = targetX + breathX;
-          curY = targetY + breathY;
+          curX = driftX + (targetX - driftX) * convergenceFactor;
+          curY = driftY + (targetY - driftY) * convergenceFactor;
         }
 
-        // Tactile Pointer & Touch Repulsion
-        if (pointer.active) {
+        // Tactile Pointer / Touch Forcefield Repulsion (ACTIVE ONLY WHEN PLAYABLE ATMOSPHERE IS ON)
+        if (isPlayable && pointer.active) {
           const pdx = curX - pointer.x;
           const pdy = curY - pointer.y;
           const pdistSq = pdx * pdx + pdy * pdy;
@@ -343,30 +336,30 @@ export const FaceCanvas: React.FC<FaceCanvasProps> = ({
           if (pdistSq < pradiusSq && pdistSq > 0.001) {
             const pdist = Math.sqrt(pdistSq);
             const normForce = 1 - pdist / pointer.radius;
-            const push = normForce * normForce * (isAtmosphereBoosted ? 40 : 25);
+            const push = normForce * normForce * (isMobile ? 22 : 36);
             p.dispX += (pdx / pdist) * push;
             p.dispY += (pdy / pdist) * push;
           }
         }
 
-        // Elastic spring dampening return
-        p.dispX *= 0.84;
-        p.dispY *= 0.84;
+        // Elastic return dampening back to zero
+        p.dispX *= 0.85;
+        p.dispY *= 0.85;
+
         curX += p.dispX;
         curY += p.dispY;
 
-        const isDisturbed = Math.abs(p.dispX) + Math.abs(p.dispY) > 2.0;
+        const isDisturbed = isPlayable && (Math.abs(p.dispX) + Math.abs(p.dispY) > 2.2);
 
-        // Alpha calculation - VIBRANT & LUMINOUS AT PROGRESS 0!
+        // Alpha calculation
         let curAlpha = p.baseAlpha;
-        if (isDisintegrating) {
+        if (progress < 0.08) {
+          curAlpha = p.baseAlpha * 0.3;
+        } else if (progress >= 0.38 && progress <= 0.90) {
+          // Luminous accent atop the photo
+          curAlpha = p.isCircuit ? 1.0 : 0.85;
+        } else if (isDisintegrating) {
           curAlpha = Math.max(0, p.baseAlpha * (1.0 - disintegrationT * 1.4));
-        } else if (progress >= 0.35 && progress <= 0.88) {
-          curAlpha = p.isCircuit ? 1.0 : 0.82;
-        } else {
-          // Gentle idle shimmer at the start
-          const shimmer = Math.sin(timeSec * 2.0 + p.driftOffset) * 0.12;
-          curAlpha = Math.min(1.0, Math.max(0.35, p.baseAlpha + shimmer));
         }
 
         p.x = curX;
@@ -374,24 +367,27 @@ export const FaceCanvas: React.FC<FaceCanvasProps> = ({
 
         if (curAlpha <= 0.02) continue;
 
-        // Draw clean glowing circular orb
+        // Draw clean circular orb with disturbance amplification
         ctx.beginPath();
         const displaySize = isDisturbed ? p.baseSize * 1.4 : p.baseSize;
         ctx.arc(curX, curY, displaySize, 0, Math.PI * 2);
 
         if (isDisturbed) {
-          ctx.fillStyle = `rgba(0, 240, 255, ${Math.min(1, curAlpha + 0.4)})`;
+          // Energetic reactive pulse when touched/dragged
+          ctx.fillStyle = `rgba(0, 240, 255, ${Math.min(1, curAlpha + 0.35)})`;
         } else if (p.isCircuit) {
+          // Distinct glowing cyan cyber circuit
           ctx.fillStyle = `rgba(0, 240, 255, ${curAlpha})`;
-        } else if (progress >= 0.35) {
-          ctx.fillStyle = `rgba(${p.r}, ${p.g}, ${p.b}, ${curAlpha * 0.85})`;
+        } else if (progress >= 0.38) {
+          // Natural colors sampled directly from your photo pixels!
+          ctx.fillStyle = `rgba(${p.r}, ${p.g}, ${p.b}, ${curAlpha * 0.82})`;
         } else {
-          // Vibrant cyan-tinted neural particles at start
-          ctx.fillStyle = `rgba(${Math.floor(p.r * 0.3)}, ${Math.floor(p.g * 0.8 + 50)}, 255, ${curAlpha * 0.9})`;
+          // Soft cosmic dust during initial approach
+          ctx.fillStyle = `rgba(180, 200, 220, ${curAlpha * 0.5})`;
         }
         ctx.fill();
 
-        // Extra delicate glow for circuit lines or touched orbs
+        // Extra delicate glow for circuit lines or disturbed orbs
         if (p.isCircuit || isDisturbed) {
           ctx.beginPath();
           ctx.arc(curX, curY, displaySize * 2.2, 0, Math.PI * 2);
@@ -402,18 +398,17 @@ export const FaceCanvas: React.FC<FaceCanvasProps> = ({
 
       ctx.restore();
 
-      // Outer Edge Vignette (feathers edges without darkening the center face)
+      // Outer Edge Vignette
       const vignette = ctx.createRadialGradient(
         centerX,
         centerY,
-        Math.min(width, height) * 0.46,
+        Math.min(width, height) * 0.36,
         centerX,
         centerY,
-        Math.max(width, height) * 0.82
+        Math.max(width, height) * 0.74
       );
       vignette.addColorStop(0, "rgba(3, 3, 3, 0)");
-      vignette.addColorStop(0.7, "rgba(3, 3, 3, 0.45)");
-      vignette.addColorStop(1, "rgba(3, 3, 3, 0.95)");
+      vignette.addColorStop(1, "rgba(3, 3, 3, 0.92)");
       ctx.fillStyle = vignette;
       ctx.fillRect(0, 0, width, height);
 

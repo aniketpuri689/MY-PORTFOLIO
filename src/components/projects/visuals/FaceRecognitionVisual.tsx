@@ -13,12 +13,11 @@ export const FaceRecognitionVisual: React.FC<FaceRecognitionVisualProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const faceCardRef = useRef<HTMLDivElement | null>(null);
-  const yawBadgeRef = useRef<HTMLSpanElement | null>(null);
 
+  const [tilt, setTilt] = useState({ rotX: 0, rotY: 0 });
   const [isHovered, setIsHovered] = useState(false);
 
-  // 3D Parallax on mouse move + scroll (Direct DOM Transform - ZERO React re-renders)
+  // 3D Parallax on mouse move + scroll
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -27,16 +26,16 @@ export const FaceRecognitionVisual: React.FC<FaceRecognitionVisualProps> = ({
     let targetRotX = 0;
     let currentRotY = 0;
     let currentRotX = 0;
-    let animId: number = 0;
-    let isVisible = true;
+    let animId: number;
 
     const onMouseMove = (e: MouseEvent) => {
       const rect = container.getBoundingClientRect();
       const normX = (e.clientX - rect.left) / rect.width - 0.5;
       const normY = (e.clientY - rect.top) / rect.height - 0.5;
 
-      targetRotY = normX * 32;
-      targetRotX = -normY * 20;
+      // Mouse turns face left/right (yaw) and up/down (pitch)
+      targetRotY = normX * 32; // up to ±16 deg
+      targetRotX = -normY * 20; // up to ±10 deg
     };
 
     const onMouseLeave = () => {
@@ -44,12 +43,12 @@ export const FaceRecognitionVisual: React.FC<FaceRecognitionVisualProps> = ({
       targetRotX = 0;
     };
 
+    // Scroll turns face subtly
     const onScroll = () => {
-      if (!isVisible) return;
       const rect = container.getBoundingClientRect();
       const windowH = window.innerHeight;
       const progress = (windowH - rect.top) / (windowH + rect.height);
-      const scrollYaw = (progress - 0.5) * 18;
+      const scrollYaw = (progress - 0.5) * 18; // smooth horizontal sweep on scroll
       targetRotY += (scrollYaw - targetRotY) * 0.2;
     };
 
@@ -57,36 +56,15 @@ export const FaceRecognitionVisual: React.FC<FaceRecognitionVisualProps> = ({
     container.addEventListener("mouseleave", onMouseLeave);
     window.addEventListener("scroll", onScroll, { passive: true });
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        isVisible = entry.isIntersecting;
-        if (isVisible && !animId) {
-          animId = requestAnimationFrame(loop);
-        }
-      },
-      { rootMargin: "100px" }
-    );
-    observer.observe(container);
-
+    // Smooth Damped Animation Loop
     const loop = () => {
-      if (!isVisible) {
-        animId = 0;
-        return;
-      }
-
       currentRotY += (targetRotY - currentRotY) * 0.08;
       currentRotX += (targetRotX - currentRotX) * 0.08;
 
-      const roundedY = Math.round(currentRotY * 10) / 10;
-      const roundedX = Math.round(currentRotX * 10) / 10;
-
-      if (faceCardRef.current) {
-        faceCardRef.current.style.transform = `rotateY(${roundedY}deg) rotateX(${roundedX}deg)`;
-      }
-
-      if (yawBadgeRef.current) {
-        yawBadgeRef.current.textContent = `YAW: ${roundedY}°`;
-      }
+      setTilt({
+        rotX: Math.round(currentRotX * 10) / 10,
+        rotY: Math.round(currentRotY * 10) / 10
+      });
 
       animId = requestAnimationFrame(loop);
     };
@@ -94,15 +72,14 @@ export const FaceRecognitionVisual: React.FC<FaceRecognitionVisualProps> = ({
     animId = requestAnimationFrame(loop);
 
     return () => {
-      observer.disconnect();
-      if (animId) cancelAnimationFrame(animId);
+      cancelAnimationFrame(animId);
       container.removeEventListener("mousemove", onMouseMove);
       container.removeEventListener("mouseleave", onMouseLeave);
       window.removeEventListener("scroll", onScroll);
     };
   }, []);
 
-  // Luminous orbs floating around the face on canvas (Paused when off-screen)
+  // Luminous orbs floating around the face on canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -111,19 +88,15 @@ export const FaceRecognitionVisual: React.FC<FaceRecognitionVisualProps> = ({
 
     let width = 0;
     let height = 0;
-    let animId: number = 0;
-    let isVisible = true;
+    let animId: number;
 
-    const isMobile = window.innerWidth < 768;
-    const orbCount = isMobile ? 20 : 35;
-
-    const orbs = Array.from({ length: orbCount }, () => ({
+    const orbs = Array.from({ length: 45 }, () => ({
       x: Math.random(),
       y: Math.random(),
-      radius: 1.0 + Math.random() * 2.0,
-      vx: (Math.random() - 0.5) * 0.0012,
-      vy: (Math.random() - 0.5) * 0.0012,
-      alpha: 0.3 + Math.random() * 0.5,
+      radius: 1.0 + Math.random() * 2.2,
+      vx: (Math.random() - 0.5) * 0.0015,
+      vy: (Math.random() - 0.5) * 0.0015,
+      alpha: 0.3 + Math.random() * 0.6,
       pulseSpeed: 0.02 + Math.random() * 0.04
     }));
 
@@ -138,29 +111,12 @@ export const FaceRecognitionVisual: React.FC<FaceRecognitionVisualProps> = ({
     resize();
     window.addEventListener("resize", resize);
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        isVisible = entry.isIntersecting;
-        if (isVisible && !animId) {
-          animId = requestAnimationFrame(render);
-        }
-      },
-      { rootMargin: "100px" }
-    );
-    observer.observe(canvas);
-
     let frame = 0;
     const render = () => {
-      if (!isVisible) {
-        animId = 0;
-        return;
-      }
-
       frame++;
       ctx.clearRect(0, 0, width, height);
 
-      for (let i = 0; i < orbs.length; i++) {
-        const orb = orbs[i];
+      for (const orb of orbs) {
         orb.x += orb.vx;
         orb.y += orb.vy;
         if (orb.x < 0) orb.x = 1;
@@ -168,7 +124,7 @@ export const FaceRecognitionVisual: React.FC<FaceRecognitionVisualProps> = ({
         if (orb.y < 0) orb.y = 1;
         if (orb.y > 1) orb.y = 0;
 
-        const pulse = Math.sin(frame * orb.pulseSpeed) * 0.18;
+        const pulse = Math.sin(frame * orb.pulseSpeed) * 0.2;
         const currentAlpha = Math.max(0.1, orb.alpha + pulse);
 
         ctx.beginPath();
@@ -176,9 +132,10 @@ export const FaceRecognitionVisual: React.FC<FaceRecognitionVisualProps> = ({
         ctx.fillStyle = `rgba(0, 240, 255, ${currentAlpha})`;
         ctx.fill();
 
+        // Soft outer glow
         ctx.beginPath();
-        ctx.arc(orb.x * width, orb.y * height, orb.radius * 2.2, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0, 240, 255, ${currentAlpha * 0.22})`;
+        ctx.arc(orb.x * width, orb.y * height, orb.radius * 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(0, 240, 255, ${currentAlpha * 0.2})`;
         ctx.fill();
       }
 
@@ -188,8 +145,7 @@ export const FaceRecognitionVisual: React.FC<FaceRecognitionVisualProps> = ({
     animId = requestAnimationFrame(render);
 
     return () => {
-      observer.disconnect();
-      if (animId) cancelAnimationFrame(animId);
+      cancelAnimationFrame(animId);
       window.removeEventListener("resize", resize);
     };
   }, []);
@@ -221,12 +177,11 @@ export const FaceRecognitionVisual: React.FC<FaceRecognitionVisualProps> = ({
           </div>
         </div>
       ) : (
-        /* Interactive 3D Turnable Face with Glowing Orbs (Hardware-accelerated) */
+        /* Interactive 3D Turnable Face with Glowing Orbs */
         <div
-          ref={faceCardRef}
-          className="relative w-72 sm:w-80 h-96 sm:h-[400px] flex items-center justify-center will-change-transform"
+          className="relative w-72 sm:w-80 h-96 sm:h-[400px] flex items-center justify-center transition-transform duration-75 ease-out"
           style={{
-            transform: "rotateY(0deg) rotateX(0deg)",
+            transform: `rotateY(${tilt.rotY}deg) rotateX(${tilt.rotX}deg)`,
             transformStyle: "preserve-3d",
           }}
         >
@@ -255,7 +210,7 @@ export const FaceRecognitionVisual: React.FC<FaceRecognitionVisualProps> = ({
                 <Scan className="w-3 h-3 text-cyan-400 animate-spin" />
                 <span>CONFIDENCE: 99.2%</span>
               </div>
-              <span className="text-zinc-400">FPS: 60</span>
+              <span className="text-zinc-400">FPS: 30+</span>
             </div>
 
             {/* Four Corner Recognition Brackets */}
@@ -283,7 +238,7 @@ export const FaceRecognitionVisual: React.FC<FaceRecognitionVisualProps> = ({
         <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
         <span className="text-zinc-200 uppercase font-medium">3D Turnable Mesh</span>
         <span className="text-zinc-600">//</span>
-        <span ref={yawBadgeRef} className="text-cyan-400">YAW: 0°</span>
+        <span className="text-cyan-400">YAW: {tilt.rotY}°</span>
       </div>
 
       {/* Bottom Hint */}

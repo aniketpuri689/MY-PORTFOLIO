@@ -28,8 +28,7 @@ export const WheatSpectralVisual: React.FC = () => {
 
     let width = 0;
     let height = 0;
-    let animId: number = 0;
-    let isVisible = true;
+    let animId: number;
 
     const resize = () => {
       if (!canvas.parentElement) return;
@@ -41,24 +40,9 @@ export const WheatSpectralVisual: React.FC = () => {
     resize();
     window.addEventListener("resize", resize);
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        isVisible = entry.isIntersecting;
-        if (isVisible && !animId) {
-          animId = requestAnimationFrame(render);
-        }
-      },
-      { rootMargin: "100px" }
-    );
-    observer.observe(canvas);
-
     let t = 0;
 
     const render = () => {
-      if (!isVisible) {
-        animId = 0;
-        return;
-      }
       t += 0.03;
       ctx.clearRect(0, 0, width, height);
 
@@ -131,8 +115,7 @@ export const WheatSpectralVisual: React.FC = () => {
     animId = requestAnimationFrame(render);
 
     return () => {
-      observer.disconnect();
-      if (animId) cancelAnimationFrame(animId);
+      cancelAnimationFrame(animId);
       window.removeEventListener("resize", resize);
     };
   }, []);
