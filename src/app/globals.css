@@ -1,26 +1,79 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #030303;
+    --foreground: #f4f4f5;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    background-color: #030303;
+    color: #f4f4f5;
+    color-scheme: dark;
+  }
+
+  section, footer {
+    scroll-margin-top: 5rem;
+  }
+
+  body {
+    background-color: #030303;
+    color: #f4f4f5;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background-color: rgba(0, 240, 255, 0.35);
+    color: #ffffff;
+  }
+
+  /* Custom Thin Dark Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #050505;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #27272a;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #38bdf8;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 32s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes pipelineFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-pipeline-fade {
+  animation: pipelineFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
