@@ -5,6 +5,8 @@ import { SectionHeading } from "@/components/common/SectionHeading";
 import { PERSONAL_INFO, PHILOSOPHY_PILLARS } from "@/lib/constants";
 import { Brain, Layers, GraduationCap, User } from "lucide-react";
 import { ArchitecturePlayground } from "./ArchitecturePlayground";
+import { LiveStatusBar } from "@/components/ui/LiveStatusBar";
+import { MetricsStrip } from "@/components/common/MetricsStrip";
 
 export const AboutSection: React.FC = () => {
   return (
@@ -19,6 +21,11 @@ export const AboutSection: React.FC = () => {
           title="Engineering & Intelligence"
           subtitle="Specializing in modern Full-Stack Web Development, Machine Learning, and Agentic AI Systems, backed by production-first engineering to build responsive, intelligent platforms."
         />
+
+        {/* Live Status Bar: Indian Standard Time, Availability & Quick Copy */}
+        <div className="mb-10">
+          <LiveStatusBar />
+        </div>
 
         {/* Asymmetric Core Bio & University Card */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-16">
@@ -155,6 +162,9 @@ export const AboutSection: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Grounded Proof-of-Work Metrics Strip */}
+        <MetricsStrip />
 
         {/* Interactive Full-Stack Architecture Simulator */}
         <ArchitecturePlayground />

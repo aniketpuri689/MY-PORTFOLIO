@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Cpu
 } from "lucide-react";
+import { ArchitectureCodeSandbox } from "./ArchitectureCodeSandbox";
 
 export const CapabilitiesSection: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -233,7 +234,7 @@ export const CapabilitiesSection: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-center gap-3 font-mono text-xs">
               <div className="px-3.5 py-2 rounded-xl bg-zinc-900/90 border border-indigo-500/40 text-indigo-300 flex items-center gap-2">
                 <Layout className="w-3.5 h-3.5" />
-                <span>Next.js 15 App</span>
+                <span>Next.js 16 App</span>
               </div>
               <ArrowRight className="w-4 h-4 text-zinc-600 hidden sm:block" />
               <div className="px-3.5 py-2 rounded-xl bg-zinc-900/90 border border-emerald-500/40 text-emerald-300 flex items-center gap-2">
@@ -248,6 +249,9 @@ export const CapabilitiesSection: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Live Interactive System Architecture & Code Bench */}
+        <ArchitectureCodeSandbox />
       </div>
     </section>
   );

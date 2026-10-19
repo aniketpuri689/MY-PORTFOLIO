@@ -27,26 +27,26 @@ export const ContactSection: React.FC = () => {
           <div className="flex items-center gap-3 text-xs font-mono tracking-widest text-cyan-400 uppercase">
             <span className="text-zinc-500">[05]</span>
             <span className="w-8 h-[1px] bg-zinc-800" />
-            <span>COMMUNICATION_PORTAL // TRANSMISSION</span>
+            <span>CONTACT & INQUIRIES</span>
           </div>
 
-          <h2 className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white uppercase leading-none">
-            Let&apos;s build something crazy.
+          <h2 className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white uppercase leading-none font-sans">
+            Let&apos;s build something exceptional.
           </h2>
 
-          <p className="text-sm md:text-base font-mono text-zinc-400 leading-relaxed">
-            Interested in collaborating on edge computer vision, autonomous AI pipelines,
-            or novel high-performance web systems? Transmit a signal.
+          <p className="text-sm md:text-base font-sans text-zinc-400 leading-relaxed">
+            Interested in collaborating on modern full-stack web platforms, edge computer vision,
+            or autonomous agentic AI systems? Let&apos;s connect.
           </p>
         </div>
 
         {/* Transmission Center: Email Copy & Social Links */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 border-y border-zinc-900 py-12 mb-16">
           {/* Direct Email Action */}
-          <div className="lg:col-span-7 flex flex-col justify-between p-8 border border-zinc-800 bg-zinc-950/60">
+          <div className="lg:col-span-7 flex flex-col justify-between p-8 border border-zinc-800 bg-zinc-950/60 rounded-2xl">
             <div>
               <div className="text-xs font-mono text-zinc-500 uppercase tracking-widest mb-2">
-                DIRECT FREQUENCY // EMAIL
+                DIRECT INQUIRY // EMAIL
               </div>
               <div className="text-xl sm:text-2xl font-mono text-cyan-300 font-semibold break-all">
                 {PERSONAL_INFO.email}
@@ -58,12 +58,12 @@ export const ContactSection: React.FC = () => {
               <button
                 onClick={handleCopyEmail}
                 id="btn-copy-email"
-                className="flex items-center gap-2 px-5 py-3 text-xs font-mono tracking-wider uppercase border border-cyan-500/50 bg-cyan-950/30 hover:bg-cyan-900/40 text-cyan-300 transition-all duration-200"
+                className="flex items-center gap-2 px-5 py-3 text-xs font-mono tracking-wider uppercase border border-cyan-500/50 bg-cyan-950/30 hover:bg-cyan-900/40 text-cyan-300 transition-all duration-200 rounded-xl cursor-pointer"
               >
                 {copied ? (
                   <>
-                    <Check className="w-4 h-4 text-cyan-300" />
-                    <span>SIGNAL COPIED TO CLIPBOARD</span>
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span className="text-emerald-300">EMAIL COPIED TO CLIPBOARD</span>
                   </>
                 ) : (
                   <>
@@ -77,9 +77,9 @@ export const ContactSection: React.FC = () => {
               <a
                 href={`mailto:${PERSONAL_INFO.email}`}
                 id="btn-mailto"
-                className="flex items-center gap-2 px-5 py-3 text-xs font-mono tracking-wider uppercase border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 transition-all duration-200"
+                className="flex items-center gap-2 px-5 py-3 text-xs font-mono tracking-wider uppercase border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 transition-all duration-200 rounded-xl cursor-pointer"
               >
-                <span>OPEN CLIENT</span>
+                <span>OPEN EMAIL APP</span>
                 <ArrowUpRight className="w-4 h-4 text-zinc-400" />
               </a>
             </div>
@@ -88,7 +88,7 @@ export const ContactSection: React.FC = () => {
           {/* Social Links Matrix */}
           <div className="lg:col-span-5 flex flex-col justify-between gap-4">
             <div className="text-xs font-mono text-zinc-500 uppercase tracking-widest">
-              AUTHENTICATED REPOSITORIES & CHANNELS
+              PROFESSIONAL NETWORKS & CODE
             </div>
 
             <div className="flex flex-col gap-3">
@@ -100,7 +100,7 @@ export const ContactSection: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 id="link-linkedin"
-                className="group flex items-center justify-between p-4 border border-zinc-800 bg-zinc-950/40 hover:border-cyan-500/60 hover:bg-zinc-900/60 transition-all duration-200"
+                className="group flex items-center justify-between p-4 border border-zinc-800 bg-zinc-950/40 hover:border-cyan-500/60 hover:bg-zinc-900/60 transition-all duration-200 rounded-xl"
               >
                 <div className="flex items-center gap-3">
                   <LinkedinIcon className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
@@ -119,7 +119,7 @@ export const ContactSection: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 id="link-github"
-                className="group flex items-center justify-between p-4 border border-zinc-800 bg-zinc-950/40 hover:border-cyan-500/60 hover:bg-zinc-900/60 transition-all duration-200"
+                className="group flex items-center justify-between p-4 border border-zinc-800 bg-zinc-950/40 hover:border-cyan-500/60 hover:bg-zinc-900/60 transition-all duration-200 rounded-xl"
               >
                 <div className="flex items-center gap-3">
                   <GithubIcon className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
@@ -136,7 +136,7 @@ export const ContactSection: React.FC = () => {
               <a
                 href={`mailto:${PERSONAL_INFO.email}`} /* <-- INSERT YOUR EMAIL IN src/lib/constants.ts */
                 id="link-email"
-                className="group flex items-center justify-between p-4 border border-zinc-800 bg-zinc-950/40 hover:border-cyan-500/60 hover:bg-zinc-900/60 transition-all duration-200"
+                className="group flex items-center justify-between p-4 border border-zinc-800 bg-zinc-950/40 hover:border-cyan-500/60 hover:bg-zinc-900/60 transition-all duration-200 rounded-xl"
               >
                 <div className="flex items-center gap-3">
                   <Mail className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />

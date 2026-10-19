@@ -2,9 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import { AudioToggle } from "./AudioToggle";
+import { CommandPalette } from "./CommandPalette";
+import { Search } from "lucide-react";
 
 export const HUDOverlay: React.FC = () => {
   const [activeTab, setActiveTab] = useState("core");
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
 
   const navItems = [
     { id: "core", label: "CORE", href: "#core" },
@@ -14,6 +17,24 @@ export const HUDOverlay: React.FC = () => {
     { id: "beyond", label: "BEYOND", href: "#beyond" },
     { id: "communicate", label: "COMMUNICATE", href: "#communicate" },
   ];
+
+  // Cmd+K / Ctrl+K keyboard shortcut listener & custom event
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsCommandOpen((prev) => !prev);
+      }
+    };
+    const handleCustomOpen = () => setIsCommandOpen(true);
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("open-command-palette", handleCustomOpen);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("open-command-palette", handleCustomOpen);
+    };
+  }, []);
 
   useEffect(() => {
     const sectionIds = ["core", "identity", "capabilities", "laboratory", "beyond", "communicate"];
@@ -59,6 +80,9 @@ export const HUDOverlay: React.FC = () => {
 
   return (
     <>
+      {/* Interactive Command Palette Modal */}
+      <CommandPalette isOpen={isCommandOpen} onClose={() => setIsCommandOpen(false)} />
+
       {/* Viewport Corner Matrix Brackets */}
       <div className="fixed top-3 left-3 w-3 h-3 border-t border-l border-zinc-700 pointer-events-none z-40 hidden sm:block" />
       <div className="fixed top-3 right-3 w-3 h-3 border-t border-r border-zinc-700 pointer-events-none z-40 hidden sm:block" />
@@ -75,11 +99,11 @@ export const HUDOverlay: React.FC = () => {
           className="pointer-events-auto flex items-center gap-2 text-zinc-200 hover:text-cyan-400 transition-colors uppercase tracking-widest font-semibold"
         >
           <span className="w-2 h-2 bg-cyan-400 rounded-none shadow-[0_0_8px_rgba(0,240,255,0.8)]" />
-          <span className="hidden xs:inline">ANIKET.SYS</span>
+          <span className="hidden xs:inline">ANIKET PURI</span>
         </a>
 
         {/* Center Pill Navigation Bar */}
-        <nav className="pointer-events-auto flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:px-4 sm:py-2 rounded-full bg-[#121316]/90 backdrop-blur-md border border-zinc-800/80 shadow-[0_4px_25px_rgba(0,0,0,0.8)] overflow-x-auto max-w-[calc(100vw-130px)] sm:max-w-none scrollbar-none">
+        <nav className="pointer-events-auto flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:px-4 sm:py-2 rounded-full bg-[#121316]/90 backdrop-blur-md border border-zinc-800/80 shadow-[0_4px_25px_rgba(0,0,0,0.8)] overflow-x-auto max-w-[calc(100vw-140px)] sm:max-w-none scrollbar-none">
           {navItems.map((item) => (
             <a
               key={item.id}
@@ -96,8 +120,20 @@ export const HUDOverlay: React.FC = () => {
           ))}
         </nav>
 
-        {/* Right Audio / Atmosphere Controller */}
-        <div className="pointer-events-auto flex items-center">
+        {/* Right Controller: Cmd+K Spotlight & Audio */}
+        <div className="pointer-events-auto flex items-center gap-2">
+          {/* Quick Command Trigger Button */}
+          <button
+            onClick={() => setIsCommandOpen(true)}
+            id="btn-open-command-palette"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white transition-all duration-200 cursor-pointer shadow-sm"
+            title="Open command palette (⌘K)"
+          >
+            <Search className="w-3 h-3 text-cyan-400" />
+            <span className="text-[10px] font-sans font-medium">Search</span>
+            <kbd className="text-[9px] px-1 py-0.2 bg-zinc-800 rounded font-mono text-zinc-400">⌘K</kbd>
+          </button>
+
           <AudioToggle />
         </div>
       </header>
